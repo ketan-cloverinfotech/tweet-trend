@@ -2,12 +2,10 @@ pipeline {
     agent any
 
     tools {
-        // Reference the Maven installation by its exact name as configured in Jenkins
         maven 'maven'
     }
 
     environment {
-        // Define Artifactory registry URL
         ARTIFACTORY_URL = "https://trialmjjh4j.jfrog.io/artifactory"
     }
 
@@ -18,28 +16,18 @@ pipeline {
                 bat 'echo PATH=%PATH%'
                 bat 'echo MAVEN_HOME=%MAVEN_HOME%'
                 bat 'echo ARTIFACTORY_URL=%ARTIFACTORY_URL%'
-                bat 'mvn -version' // Verify Maven is accessible
-                echo "---------------------------------"
-            }
-        }
-
-        stage("Test Maven") {
-            steps {
-                echo "----- Testing Maven -----"
                 bat 'mvn -version'
-                echo "--------------------------"
+                echo "---------------------------------"
             }
         }
 
         stage("Build") {
             steps {
                 echo "----------- Build Started ----------"
-                // Create jarstaging directory if not exists
                 bat 'if not exist jarstaging mkdir jarstaging'
-                bat 'mvn clean package -Dmaven.test.skip=true -DoutputDirectory=jarstaging'
+                bat 'mvn clean package -Dmaven.test.skip=true'
+                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
                 echo "----------- Build Completed ----------"
-                // Archive the artifacts
-                archiveArtifacts artifacts: 'jarstaging/**', fingerprint: true
             }
         }
 
@@ -48,14 +36,12 @@ pipeline {
                 script {
                     echo '<--------------- Publish to Artifactory Started --------------->'
 
-                    // Initialize Artifactory server using the configured server ID
-                    def server = Artifactory.server 'artifactory-server' // Replace with your Server ID if different
+                    def server = Artifactory.server('artifactory-server')
 
-                    // Define the upload specification
                     def uploadSpec = """{
                         "files": [
                             {
-                                "pattern": "jarstaging\\com\\valaxy\\demo-workshop\\2.1.4\\*.jar",
+                                "pattern": "target/*.jar",
                                 "target": "libs-release-local/com/valaxy/demo-workshop/2.1.4/",
                                 "props": "build.id=${env.BUILD_ID};build.number=${env.BUILD_NUMBER}",
                                 "exclusions": [ "*.sha1", "*.md5" ]
@@ -63,10 +49,9 @@ pipeline {
                         ]
                     }"""
 
-                    // Upload the artifacts to Artifactory
-                    def buildInfo = server.upload spec: uploadSpec
+                    echo "Upload Spec: ${uploadSpec}"
 
-                    // Publish the build info to Artifactory
+                    def buildInfo = server.upload spec: uploadSpec
                     server.publishBuildInfo buildInfo
 
                     echo '<--------------- Publish to Artifactory Ended --------------->'
