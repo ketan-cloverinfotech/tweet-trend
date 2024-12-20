@@ -38,12 +38,12 @@ pipeline {
                     // Initialize Artifactory server
                     def server = Artifactory.server('artifactory-server')
 
-                    // Define the upload specification without props initially
+                    // Define the upload specification with the correct repository name
                     def uploadSpec = """{
                         "files": [
                             {
                                 "pattern": "target/*.jar",
-                                "target": "libs-release-local/com/valaxy/demo-workshop/2.1.4/",
+                                "target": "cloever-infotech-libs-release-local/com/valaxy/demo-workshop/2.1.4/",
                                 "exclusions": [ "*.sha1", "*.md5" ]
                             }
                         ]
@@ -53,10 +53,6 @@ pipeline {
 
                     // Upload the artifacts to Artifactory
                     def buildInfo = server.upload spec: uploadSpec
-
-                    // Optionally, add properties after successful upload
-                    // def buildInfo = server.upload spec: uploadSpec
-                    // buildInfo.env.capture = true // Example of capturing environment variables
 
                     // Publish the build info to Artifactory
                     server.publishBuildInfo buildInfo
