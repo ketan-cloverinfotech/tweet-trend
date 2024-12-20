@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-        // Ensure 'Maven 3.9.2' is configured under Jenkins > Global Tool Configuration
+        // Ensure that 'Maven 3.9.2' matches the name in Global Tool Configuration
         maven 'Maven 3.9.2'
     }
 
@@ -18,7 +18,7 @@ pipeline {
                 bat 'echo PATH=%PATH%'
                 bat 'echo MAVEN_HOME=%MAVEN_HOME%'
                 bat 'echo Registry URL=%registry%'
-                bat 'mvn -version'
+                bat 'mvn -version' // Verify Maven is accessible
                 echo "---------------------------------"
             }
         }
@@ -69,7 +69,7 @@ pipeline {
 
                     echo '<--------------- Jar Publish Ended --------------->'
                 }
-            }   
+            }
         }
     }
 
