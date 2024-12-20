@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-        maven 'maven'
+        maven 'maven' // Ensure 'maven' is correctly configured in Jenkins
     }
 
     environment {
@@ -10,6 +10,17 @@ pipeline {
     }
 
     stages {
+        stage("Print Environment Variables") {
+            steps {
+                echo "----- Environment Variables -----"
+                bat 'echo PATH=%PATH%'
+                bat 'echo MAVEN_HOME=%MAVEN_HOME%'
+                bat 'echo ARTIFACTORY_URL=%ARTIFACTORY_URL%'
+                bat 'mvn -version' // Verify Maven is accessible
+                echo "---------------------------------"
+            }
+        }
+
         stage("Build") {
             steps {
                 echo "----------- Build Started ----------"
@@ -24,14 +35,15 @@ pipeline {
                 script {
                     echo '<--------------- Publish to Artifactory Started --------------->'
 
+                    // Initialize Artifactory server
                     def server = Artifactory.server('artifactory-server')
 
+                    // Define the upload specification without props initially
                     def uploadSpec = """{
                         "files": [
                             {
                                 "pattern": "target/*.jar",
                                 "target": "libs-release-local/com/valaxy/demo-workshop/2.1.4/",
-                                "props": "build.id=${env.BUILD_ID};build.number=${env.BUILD_NUMBER}",
                                 "exclusions": [ "*.sha1", "*.md5" ]
                             }
                         ]
@@ -39,7 +51,14 @@ pipeline {
 
                     echo "Upload Spec: ${uploadSpec}"
 
-                    def buildInfo = server.upload spec: uploadSpec, failNoOp: true
+                    // Upload the artifacts to Artifactory
+                    def buildInfo = server.upload spec: uploadSpec
+
+                    // Optionally, add properties after successful upload
+                    // def buildInfo = server.upload spec: uploadSpec
+                    // buildInfo.env.capture = true // Example of capturing environment variables
+
+                    // Publish the build info to Artifactory
                     server.publishBuildInfo buildInfo
 
                     echo '<--------------- Publish to Artifactory Ended --------------->'
