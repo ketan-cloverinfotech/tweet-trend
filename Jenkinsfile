@@ -10,21 +10,9 @@ pipeline {
     }
 
     stages {
-        stage("Print Environment Variables") {
-            steps {
-                echo "----- Environment Variables -----"
-                bat 'echo PATH=%PATH%'
-                bat 'echo MAVEN_HOME=%MAVEN_HOME%'
-                bat 'echo ARTIFACTORY_URL=%ARTIFACTORY_URL%'
-                bat 'mvn -version'
-                echo "---------------------------------"
-            }
-        }
-
         stage("Build") {
             steps {
                 echo "----------- Build Started ----------"
-                bat 'if not exist jarstaging mkdir jarstaging'
                 bat 'mvn clean package -Dmaven.test.skip=true'
                 archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
                 echo "----------- Build Completed ----------"
@@ -51,7 +39,7 @@ pipeline {
 
                     echo "Upload Spec: ${uploadSpec}"
 
-                    def buildInfo = server.upload spec: uploadSpec
+                    def buildInfo = server.upload spec: uploadSpec, failNoOp: true
                     server.publishBuildInfo buildInfo
 
                     echo '<--------------- Publish to Artifactory Ended --------------->'
